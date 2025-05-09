@@ -8,6 +8,10 @@ let hands = [];
 let circleX = 320; // 圓的初始 X 座標
 let circleY = 240; // 圓的初始 Y 座標
 let circleRadius = 50; // 圓的半徑
+let isDragging = false; // 是否正在拖動圓
+let isThumbDragging = false; // 是否正在用大拇指拖動圓
+let previousX = null; // 上一個圓心的 X 座標
+let previousY = null; // 上一個圓心的 Y 座標
 
 function preload() {
   // Initialize HandPose model with flipped video input
@@ -39,8 +43,22 @@ function draw() {
   noStroke();
   circle(circleX, circleY, circleRadius * 2);
 
+  // 畫出圓心的軌跡
+  if ((isDragging || isThumbDragging) && previousX !== null && previousY !== null) {
+    stroke(isThumbDragging ? 0 : 255, isThumbDragging ? 255 : 0, 0); // 綠色或紅色線條
+    strokeWeight(10); // 線條粗細為 10
+    line(previousX, previousY, circleX, circleY);
+  }
+
+  // 更新上一個圓心的位置
+  previousX = circleX;
+  previousY = circleY;
+
   // 確保至少檢測到一隻手
   if (hands.length > 0) {
+    let isCircleMoved = false; // 檢查是否有手指移動圓
+    let isThumbCircleMoved = false; // 檢查是否有大拇指移動圓
+
     for (let hand of hands) {
       if (hand.confidence > 0.1) {
         // 繪製手部的關鍵點和連線
@@ -103,8 +121,23 @@ function draw() {
           // 如果食指和大拇指同時碰觸到圓，讓圓跟隨手指移動
           circleX = (indexFinger.x + thumb.x) / 2;
           circleY = (indexFinger.y + thumb.y) / 2;
+          isCircleMoved = true;
+        } else if (dThumb < circleRadius) {
+          // 如果只有大拇指碰觸到圓，讓圓跟隨大拇指移動
+          circleX = thumb.x;
+          circleY = thumb.y;
+          isThumbCircleMoved = true;
         }
       }
+    }
+
+    // 更新拖動狀態
+    isDragging = isCircleMoved;
+    isThumbDragging = isThumbCircleMoved;
+
+    if (!isDragging && !isThumbDragging) {
+      previousX = null;
+      previousY = null;
     }
   }
 }
