@@ -5,6 +5,10 @@ let video;
 let handPose;
 let hands = [];
 
+let circleX = 320; // 圓的初始 X 座標
+let circleY = 240; // 圓的初始 Y 座標
+let circleRadius = 50; // 圓的半徑
+
 function preload() {
   // Initialize HandPose model with flipped video input
   handPose = ml5.handPose({ flipped: true });
@@ -30,15 +34,20 @@ function setup() {
 function draw() {
   image(video, 0, 0);
 
-  // Ensure at least one hand is detected
+  // 畫出中間的圓
+  fill(0, 0, 255, 150); // 半透明藍色
+  noStroke();
+  circle(circleX, circleY, circleRadius * 2);
+
+  // 確保至少檢測到一隻手
   if (hands.length > 0) {
     for (let hand of hands) {
       if (hand.confidence > 0.1) {
-        // Loop through keypoints and draw circles
+        // 繪製手部的關鍵點和連線
         for (let i = 0; i < hand.keypoints.length; i++) {
           let keypoint = hand.keypoints[i];
 
-          // Color-code based on left or right hand
+          // 根據左右手設定顏色
           if (hand.handedness == "Left") {
             fill(255, 0, 255);
           } else {
@@ -49,48 +58,51 @@ function draw() {
           circle(keypoint.x, keypoint.y, 16);
         }
 
-        // Draw lines connecting keypoints
-        stroke(0, 255, 0); // Set line color
+        stroke(0, 255, 0); // 設定線條顏色
         strokeWeight(2);
 
-        // Connect keypoints 0-4
+        // 連接手指的關鍵點
         for (let i = 0; i < 4; i++) {
           line(
             hand.keypoints[i].x, hand.keypoints[i].y,
             hand.keypoints[i + 1].x, hand.keypoints[i + 1].y
           );
         }
-
-        // Connect keypoints 5-8
         for (let i = 5; i < 8; i++) {
           line(
             hand.keypoints[i].x, hand.keypoints[i].y,
             hand.keypoints[i + 1].x, hand.keypoints[i + 1].y
           );
         }
-
-        // Connect keypoints 9-12
         for (let i = 9; i < 12; i++) {
           line(
             hand.keypoints[i].x, hand.keypoints[i].y,
             hand.keypoints[i + 1].x, hand.keypoints[i + 1].y
           );
         }
-
-        // Connect keypoints 13-16
         for (let i = 13; i < 16; i++) {
           line(
             hand.keypoints[i].x, hand.keypoints[i].y,
             hand.keypoints[i + 1].x, hand.keypoints[i + 1].y
           );
         }
-
-        // Connect keypoints 17-20
         for (let i = 17; i < 20; i++) {
           line(
             hand.keypoints[i].x, hand.keypoints[i].y,
             hand.keypoints[i + 1].x, hand.keypoints[i + 1].y
           );
+        }
+
+        // 檢查食指 (keypoints[8]) 和大拇指 (keypoints[4]) 是否同時碰觸圓的邊緣
+        let indexFinger = hand.keypoints[8];
+        let thumb = hand.keypoints[4];
+        let dIndex = dist(indexFinger.x, indexFinger.y, circleX, circleY);
+        let dThumb = dist(thumb.x, thumb.y, circleX, circleY);
+
+        if (dIndex < circleRadius && dThumb < circleRadius) {
+          // 如果食指和大拇指同時碰觸到圓，讓圓跟隨手指移動
+          circleX = (indexFinger.x + thumb.x) / 2;
+          circleY = (indexFinger.y + thumb.y) / 2;
         }
       }
     }
